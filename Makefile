@@ -51,7 +51,16 @@ install-macos-brew-dependencies:
 panda/build/Makefile:
 	$(MAKE) configure
 
-configure: $(VENV)/touchfile
+.PHONY: update-dep
+update-dep: panda
+	cd panda && git checkout main && git pull
+
+panda:
+	git clone https://github.com/bestOrganisationEver/panda.git
+	cd panda && git checkout main
+	
+
+configure: $(VENV)/touchfile panda
 	mkdir -p panda/build
 	$(VENV_ACTIVATE) && \
 	cd panda/build && \
