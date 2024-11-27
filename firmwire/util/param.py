@@ -2,7 +2,11 @@
 ## SPDX-License-Identifier: BSD-3-Clause
 import argparse
 import shlex
-from collections import Mapping
+try:
+    from collections import Mapping
+except ImportError:
+    from collections.abc import Mapping
+
 
 
 class ParamValidationError(Exception):
