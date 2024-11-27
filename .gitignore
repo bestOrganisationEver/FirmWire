@@ -7,3 +7,11 @@ __pycache__
 
 # Firmware
 *_workspace/
+
+# clangd stuff
+.cache/clangd
+compile_commands.json
+
+# python venv files
+venv
+
