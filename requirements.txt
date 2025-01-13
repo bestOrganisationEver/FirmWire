@@ -1,5 +1,5 @@
 # Orchestration
-avatar2>=1.4.2
+avatar2 @ git+https://github.com/bestOrganisationEver/avatar2@main
 
 # Interactive kernel mode
 ipykernel==5.5.0
@@ -22,8 +22,10 @@ pyelftools
 requests
 # MTK required
 filetype
-rocksdb
+# rocksdb
 # Below required for pypanda
 cffi
 protobuf
 colorama
+
+pycparser
