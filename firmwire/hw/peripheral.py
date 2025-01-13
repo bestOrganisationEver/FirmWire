@@ -45,7 +45,7 @@ class FirmWirePeripheral(avatar2.AvatarPeripheral):
         return state
 
     def log_read(self, value, size, offset_name):
-        self.log.debug(
+        self.log.info(
             "%s: %0" + str(size * 2) + "x <- %s[%s]",
             self.format_address(self.pc),
             value,
@@ -54,7 +54,7 @@ class FirmWirePeripheral(avatar2.AvatarPeripheral):
         )
 
     def log_write(self, value, size, offset_name):
-        self.log.debug(
+        self.log.info(
             "%s: %s[%s] <- %0" + str(size * 2) + "x",
             self.format_address(self.pc),
             self.name,
@@ -105,11 +105,11 @@ class FirmWirePeripheral(avatar2.AvatarPeripheral):
 
 
 class PassthroughPeripheral(FirmWirePeripheral):
-    def hw_read(self, offset, size):
+    def hw_read(self, offset, size, *args, **kwargs):
         value = self.read_raw(offset, size)
         return value
 
-    def hw_write(self, offset, size, value):
+    def hw_write(self, offset, size, value, *args, **kwargs):
         self.write_raw(offset, size, value)
         return True
 
@@ -135,14 +135,14 @@ class PassthroughPeripheral(FirmWirePeripheral):
 
 
 class LoggingPeripheral(PassthroughPeripheral):
-    def hw_read(self, offset, size):
+    def hw_read(self, offset, size, *args, **kwargs):
         value = super().hw_read(offset, size)
         offset_name = "LOG %08x" % (self.address + offset)
         self.log_read(value, size, offset_name)
 
         return value
 
-    def hw_write(self, offset, size, value):
+    def hw_write(self, offset, size, value, *args, **kwargs):
         offset_name = "LOG %08x" % (self.address + offset)
         self.log_write(value, size, offset_name)
 

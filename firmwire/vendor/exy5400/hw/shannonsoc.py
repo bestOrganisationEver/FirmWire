@@ -8,7 +8,7 @@ from . import LoggingPeripheral
 
 
 class ShannonSOCPeripheral(LoggingPeripheral):
-    def hw_read(self, offset, size):
+    def hw_read(self, offset, size, *args, **kwargs):
         if offset == 0x00:
             value = self.warm_boot[0]
             offset_name = "WARM_BOOT_0"
