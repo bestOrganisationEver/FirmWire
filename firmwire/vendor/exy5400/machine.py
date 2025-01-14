@@ -431,10 +431,10 @@ r12: %08x     cpsr: %08x""" % (
         soc_per = self.get_peripheral("SOC")
         soc_per.chip_id = self.modem_soc.CHIP_ID
 
-        # bypass an initial boot check to avoid crash (0x82001000)
+        # bypass an initial boot check to avoid crash (0x82020004)
         soc_per.warm_boot[0] = 0x1
 
-        # write a 0x1 to signify that this is a cold RESET (0x82001004)
+        # write a 0x1 to signify that this is a cold RESET (0x82020004)
         soc_per.warm_boot[1] = 0x1
 
         # Boot packet
