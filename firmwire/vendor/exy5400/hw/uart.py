@@ -9,13 +9,13 @@ from . import FirmWirePeripheral, LoggingPeripheral
 
 
 class UARTPeripheral(FirmWirePeripheral):
-    def hw_read(self, offset, size):
+    def hw_read(self, offset, size, *args, **kwargs):
         if offset == 0x18:
             return self.status
 
         return 0
 
-    def hw_write(self, offset, size, value):
+    def hw_write(self, offset, size, value, *args, **kwargs):
         if offset == 0:
             sys.stderr.write(chr(value & 0xFF))
             sys.stderr.flush()
@@ -38,10 +38,10 @@ class UARTPeripheral(FirmWirePeripheral):
 
 
 class MotoUARTPeripheral(LoggingPeripheral):
-    def hw_read(self, offset, size):
+    def hw_read(self, offset, size, *args, **kwargs):
         return super().hw_read(offset, size)
 
-    def hw_write(self, offset, size, value):
+    def hw_write(self, offset, size, value, *args, **kwargs):
         if offset == 0x20:
             sys.stderr.write(chr(value & 0xFF))
             sys.stderr.flush()

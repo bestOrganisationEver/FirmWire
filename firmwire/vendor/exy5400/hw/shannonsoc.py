@@ -15,16 +15,30 @@ class ShannonSOCPeripheral(LoggingPeripheral):
         elif offset == 0x04:
             value = self.warm_boot[1]
             offset_name = "WARM_BOOT_1"
+        # 0x40a4cddc
+        elif offset in (
+            0x0a04, 0x0a24, 0x0a3c, 0x0a50, 0x0b04, 0x0b18, 0x0b2c, 0x0b40, # arg1 = 0
+            0x0b7c, 0x0b68, # arg1 = 1
+                        ):
+            # Something non-zero
+            value = 1
+            offset_name = f"CHIP_WAKEUP? {offset}"
+        # 0x40a3b046
+        elif offset == 0x0bb0:
+            # Something non-zero
+            value = 1
+            offset_name = f"CHIP_WAKEUP?2 {offset}"
         else:
             value = 0
             offset_name = ""
             value = super().hw_read(offset, size)
 
-        self.log_read(value, size, offset_name)
+        if offset_name != "":
+            self.log_read(value, size, offset_name)
 
         return value
 
-    def hw_write(self, offset, size, value):
+    def hw_write(self, offset, size, value, *args, **kwargs):
         return super().hw_write(offset, size, value)
 
     def __init__(self, name, address, size, **kwargs):
