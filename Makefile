@@ -12,7 +12,7 @@ venv: $(VENV)/touchfile
 
 $(VENV)/touchfile: requirements.txt
 	test -d $(VENV) || $(PYTHON) -m venv $(VENV)
-	# $(VENV_ACTIVATE) && pip install -Ur requirements.txt
+	$(VENV_ACTIVATE) && pip install -Ur requirements.txt
 	touch $(VENV)/touchfile
 
 .PHONY: install-ubuntu-dependencies
