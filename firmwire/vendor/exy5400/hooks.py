@@ -512,7 +512,8 @@ def NV_STUFF(self, cpustate, tb, hook):
 
 
 def handle_RESET(self, cpustate, tb, hook):
-    log.info("RESET CALLED")
+    pc = cpustate.env_ptr.regs[15]
+    log.info(f"RESET CALLED from {pc}")
     return True
 
 
