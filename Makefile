@@ -57,7 +57,7 @@ update-dep: panda
 
 panda:
 	git clone https://github.com/bestOrganisationEver/panda.git
-	cd panda && git checkout main
+	cd panda && git checkout main && git submodule update --init dtc
 	
 
 configure: $(VENV)/touchfile panda
