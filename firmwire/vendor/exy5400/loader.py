@@ -135,8 +135,11 @@ class Exy5400Loader(firmwire.loader.Loader):
         modem_main = self.modem_file.get_section("MAIN")
         sym = self.symbol_table.lookup("boot_mpu_table")
         if self.loader_args.get("is_s24"):
+            # some sp gets set to 0x471c4fd8 at some point. (holds at 0x42be9424)
+            # assuming the ram here is contiguous, it's reasonable to assume it
+            # goes up to 0x08000000
             mpu_entries = [firmwire.vendor.exy5400.mpu.MPUEntry(
-                0, 0x40000000, 0x05000000, 1 << 8
+                0, 0x40000000, 0x08000000, 1 << 8
             )]
         elif sym is None:
             log.error(
@@ -251,7 +254,7 @@ class Exy5400Loader(firmwire.loader.Loader):
         self.create_peripheral(LoggingPeripheral, 0x8FC22000, 0x1000, name="usi2")
         self.create_peripheral(LoggingPeripheral, 0x8FC60000, 0x1000, name="usi3")
         self.create_peripheral(LoggingPeripheral, 0x8FD20000, 0x1000, name="usi4")
-        self.create_peripheral(LoggingPeripheral, 0x40000000, 0xf000, name="boot")
+        self.create_peripheral(LoggingPeripheral, 0x40000000, 0x8000, name="boot")
 
         if self.modem_file.has_section("NV"):
             nv = self.modem_file.get_section("NV")
