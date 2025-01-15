@@ -12,7 +12,7 @@ venv: $(VENV)/touchfile
 
 $(VENV)/touchfile: requirements.txt
 	test -d $(VENV) || $(PYTHON) -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip install -Ur requirements.txt
+	# $(VENV_ACTIVATE) && pip install -Ur requirements.txt
 	touch $(VENV)/touchfile
 
 .PHONY: install-ubuntu-dependencies
@@ -129,3 +129,6 @@ compile: venv panda/build/Makefile
   	python3 setup.py install
 
 	
+update:
+	git pull
+	cd panda && git pull
