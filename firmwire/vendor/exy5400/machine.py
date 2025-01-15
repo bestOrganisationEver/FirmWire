@@ -346,7 +346,7 @@ r12: %08x     cpsr: %08x""" % (
         qemu = avatar.add_target(
             PyPandaTarget,
             name=self.instance_name,
-            gdb_executable="gdb",
+            gdb_executable="gdb-multiarch",
             gdb_port=self.ports["qemu_gdb"],
             qmp_port=self.ports["qemu_qmp"],
             entry_address=self.modem_soc.ENTRY_ADDRESS,
