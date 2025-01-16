@@ -1,7 +1,7 @@
 VENV=venv
 VENV_ACTIVATE=. $(VENV)/bin/activate
 
-PYTHON=python
+PYTHON=python3
 PYTHON_VENV=$(VENV)/bin/python
 
 .PHONY: default
@@ -56,8 +56,8 @@ update-dep: panda
 	cd panda && git checkout main && git pull
 
 panda:
-	git clone https://github.com/bestOrganisationEver/panda.git
-	cd panda && git checkout main && git submodule update --init dtc
+	git clone --recurse-submodules https://github.com/bestOrganisationEver/panda.git
+	cd panda && git checkout main
 	
 
 configure: $(VENV)/touchfile panda
