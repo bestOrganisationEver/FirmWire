@@ -8,6 +8,14 @@ import firmwire.vendor.shannon.pattern_handlers as handlers
 log = logging.getLogger(__name__)
 
 PATTERNS = {
+    "boot_mmu_table": {
+        "pattern": "00000000 00000000 00c00000"
+        + "5c060000",
+        # + "????????" * 6
+        # + "01000000 01000000 00000004 20",
+        "offset": 0x50,
+        "required": True,
+    }
     # "boot_mpu_table": {
     #     "pattern": "00000000 00000000 1c000000"
     #     + "????????" * 6
