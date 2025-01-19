@@ -34,7 +34,9 @@ def dsp_base_search(main_section):
         off = str_loc[0]
         return struct.unpack("<I", main_section.data[off : off + 4])[0]
 
-class UnknownS24AP(ShannonSOC):
+
+# Modem AP in the Samsung S24
+class S5123AP(ShannonSOC):
     peripherals = [
         # SOCPeripheral(S3xxAPBoot, 0x90540000, 0x100, name="S3xxboot"),
     ]
@@ -47,7 +49,7 @@ class UnknownS24AP(ShannonSOC):
     CLK_PERIPHERAL = S355APClkPeripheral
     TIMER_BASE = SOC_BASE + 0xC000
     ENTRY_ADDRESS = 0x40010000
-    name = "UnknownS24AP"
+    name = "S5123AP"
 
     def __init__(self, date, main_section):
         super().__init__(date)
@@ -63,4 +65,4 @@ class UnknownS24AP(ShannonSOC):
         #     )
         # ]
 
-register_soc("exy5400", UnknownS24AP)
+register_soc("exy5400", S5123AP)

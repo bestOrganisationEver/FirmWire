@@ -12,11 +12,13 @@ import os
 
 from pathlib import PurePath
 
+from firmwire.vendor.shannon.mpu import AddressRange
+
 from .TOCFile import *
 from avatar2 import *
 
 import firmwire.vendor.exy5400 as exy5400
-import firmwire.vendor.exy5400.mpu
+import firmwire.vendor.exy5400.mmu
 import firmwire.vendor.exy5400.soc
 
 from firmwire.hw.soc import get_soc
@@ -133,13 +135,15 @@ class Exy5400Loader(firmwire.loader.Loader):
         #######################
 
         modem_main = self.modem_file.get_section("MAIN")
-        sym = self.symbol_table.lookup("boot_mpu_table")
+        sym = self.symbol_table.lookup("boot_mmu_table")
+        # XXX: poor man's hand-written mmu table. we now have the correct
+        # table so let's switch to that, and remove this after.
         if self.loader_args.get("is_s24"):
-            # some sp gets set to 0x471c4fd8 at some point. (holds at 0x42be9424)
-            # assuming the ram here is contiguous, it's reasonable to assume it
-            # goes up to 0x08000000
-            mpu_entries = [firmwire.vendor.exy5400.mpu.MPUEntry(
-                0, 0x40000000, 0x08000000, 1 << 8
+            # some sp gets set to 0x471c4fd8 at some point. (holds at PC 
+            # 0x42be9424) assuming the ram here is contiguous, it's reasonable
+            # to assume it goes up to 0x08000000
+            mpu_entries = [firmwire.vendor.exy5400.mmu.MMUSectionEntry(
+                0, 0x40000000, 0x40000000, 0x08000000, (0 << 15) | (0b11 << 10)
             )]
         elif sym is None:
             log.error(
@@ -147,15 +151,17 @@ class Exy5400Loader(firmwire.loader.Loader):
             )
             return False
         else:
-            mpu_entries = exy5400.mpu.parse_mpu_table(modem_main, sym.address)
-        table = exy5400.mpu.consolidate_mpu_table(mpu_entries)
-        self.mpu_table = table
+            mpu_entries = exy5400.mmu.parse_mmu_table(modem_main, sym.address)
+        table = exy5400.mmu.consolidate_mpu_table(mpu_entries)
+        self.mmu_table = table
 
         for entry in table:
-            mpu = entry.mpu
-            name = "MPU%d_%08x" % (mpu.slot, entry.start)
+            mmu = entry.mmu
+            name = "MMU%d_%08x" % (mmu.mapping_idx, entry.start)
+            print(name, hex(entry.size), mmu.get_rwx_str(is_priv=True))
+            # XXX: how do permissions work here?
             self.add_memory_range(
-                entry.start, entry.size, name=name, permissions=mpu.get_rwx_str()
+                entry.start, entry.size, name=name, permissions=mmu.get_rwx_str(is_priv=True)
             )
 
         #######################
@@ -436,17 +442,21 @@ class Exy5400Loader(firmwire.loader.Loader):
     def guess_soc_version(self):
         main = self.modem_file.get_section("MAIN")
         if self.loader_args.get("is_s24", False):
-            soc_guess = "UnknownS24AP"
+            soc_guess = "S5123AP"
             soc_date = 20451201
 
         else:
-
+            # from 0x40104d6c
             # Try to find the version with the date first
             found = re.search(
                 rb"""
             (?P<SOC>[S][0-9]{3,}(AP)?) # SOC-ID
-            .{,10}                    # garbage or unknown (usually underscores)
-            (?P<date>[0-9]{8})        # Date as YYYYMMDD (for rough SoC revision)
+            _PROD_                    # Build type
+            ([^_]+_[^\d_][^_]*)*      # Additional build data until we hit something
+                                      # that starts with a digit. (which might be
+                                      # the date?)
+
+            (?P<date>[0-9]{8})        # Could be date as YYMMDD (for rough SoC revision)
             [^\x00]*                  # null terminator""",
                 main.data,
                 re.M | re.S | re.X,

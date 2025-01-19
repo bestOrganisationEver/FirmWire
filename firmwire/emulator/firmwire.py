@@ -16,7 +16,7 @@ from ..hw.soc import SOCPeripheral
 
 from firmwire.util.misc import copy_function
 
-from firmwire.memory_map import MemoryMapEntryType
+from firmwire.memory_map import MemoryMapEntry, MemoryMapEntryType
 from avatar2 import Avatar, TargetStates
 from avatar2.peripherals.avatar_peripheral import AvatarPeripheral
 
@@ -483,7 +483,7 @@ class FirmWireEmu(ABC):
 
         self.snapshot_manager.print_info(snapshot_name)
 
-    def apply_memory_map(self, memory_map):
+    def apply_memory_map(self, memory_map: list[MemoryMapEntry]):
         """Realize a memory map description list into Avatar memory ranges"""
         for entry in memory_map:
             if (

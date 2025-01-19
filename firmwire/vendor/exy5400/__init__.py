@@ -3,4 +3,4 @@
 # Register loader
 from .loader import Exy5400Loader
 
-import firmwire.vendor.exy5400.mpu as mpu
+import firmwire.vendor.exy5400.mmu as mmu
