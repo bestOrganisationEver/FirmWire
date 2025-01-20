@@ -10,14 +10,17 @@ from . import FirmWirePeripheral, LoggingPeripheral
 
 class UARTPeripheral(FirmWirePeripheral):
     def hw_read(self, offset, size, *args, **kwargs):
+        self.log_read(offset, size, "UART")
         if offset == 0x18:
             return self.status
+        if offset == 0x30:
+            return self.status2
 
         return 0
 
     def hw_write(self, offset, size, value, *args, **kwargs):
         if offset == 0:
-            sys.stderr.write(chr(value & 0xFF))
+            sys.stderr.write("[BOOTUART] " + chr(value & 0xFF) + "\n")
             sys.stderr.flush()
         else:
             self.log_write(value, size, "UART")
@@ -28,6 +31,7 @@ class UARTPeripheral(FirmWirePeripheral):
         super().__init__(name, address, size, **kwargs)
 
         self.status = 0
+        self.status2 = 1 << 8 # bit 8 enables uart, see 0x40a3cea2
 
         self.write_handler[0:size] = self.hw_write
         self.read_handler[0:size] = self.hw_read
@@ -35,22 +39,3 @@ class UARTPeripheral(FirmWirePeripheral):
         # init of this peripheral bypasses shannon peripheral, hence we set pc
         # dummy value manually
         self.pc = 0
-
-
-class MotoUARTPeripheral(LoggingPeripheral):
-    def hw_read(self, offset, size, *args, **kwargs):
-        return super().hw_read(offset, size)
-
-    def hw_write(self, offset, size, value, *args, **kwargs):
-        if offset == 0x20:
-            sys.stderr.write(chr(value & 0xFF))
-            sys.stderr.flush()
-            return True
-        else:
-            return super().hw_write(offset, size, value)
-
-    def __init__(self, name, address, size, **kwargs):
-        super().__init__(name, address, size, **kwargs)
-
-        self.write_handler[0:size] = self.hw_write
-        self.read_handler[0:size] = self.hw_read
