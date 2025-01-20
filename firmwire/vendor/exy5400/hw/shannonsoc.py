@@ -26,7 +26,8 @@ class ShannonSOCPeripheral(LoggingPeripheral):
         # 0x40a3b046
         elif offset == 0x0bb0:
             # Something non-zero
-            value = 1
+            # value = 1
+            value = self.chip_wakeup2
             offset_name = f"CHIP_WAKEUP?2 {offset}"
         else:
             value = 0
@@ -39,7 +40,23 @@ class ShannonSOCPeripheral(LoggingPeripheral):
         return value
 
     def hw_write(self, offset, size, value, *args, **kwargs):
+        # TODO: add write of warm_boot.
+
+        # 0x416015aa called thru 0x415e3f2e and the other branches in that func
+        if offset == 0x168:
+            # 4 | 3 |   2  |   1   | 0
+            #   |   | MPLL |       | 
+            self.mpll = value
+            self.reconfigure_mpll()
+        # from 0x40a3b078
+        elif offset == 0xb94:
+            self.chip_wakeup2 = value
+
         return super().hw_write(offset, size, value)
+
+    def reconfigure_mpll(self):
+        # TODO!
+        ...
 
     def __init__(self, name, address, size, **kwargs):
         super().__init__(name, address, size, **kwargs)
@@ -51,3 +68,5 @@ class ShannonSOCPeripheral(LoggingPeripheral):
         self.write_handler[0:size] = self.hw_write
 
         self.cycle_idx = 0
+
+        self.chip_wakeup2 = 0
