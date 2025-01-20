@@ -2,7 +2,7 @@
 ## SPDX-License-Identifier: BSD-3-Clause
 from firmwire.hw.peripheral import *
 
-from .uart import UARTPeripheral, MotoUARTPeripheral
+from .uart import UARTPeripheral
 from .shannoncp import SHMPeripheral
 from .shannonsoc import ShannonSOCPeripheral
 from .Unknown2Peripheral import Unknown2Peripheral
