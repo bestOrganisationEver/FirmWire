@@ -337,8 +337,8 @@ r12: %08x     cpsr: %08x""" % (
         # Also try 'mmu' for fun
         # Try 'int' for interrupt debugging
 
-        # log_items=["guest_errors", "mmu", "cpu"]
-        log_items = []
+        # log_items = []
+        log_items=["guest_errors", "mmu"]
 
         if args.raw_asm_logging:
             log_items += ["in_asm"]
@@ -363,14 +363,14 @@ r12: %08x     cpsr: %08x""" % (
         if log.isEnabledFor(logging.DEBUG):
             self.dump_memory_ranges()
 
-        rwx_region = self.find_safe_rwx_region()
+        # rwx_region = self.find_safe_rwx_region()
 
-        if rwx_region is None:
-            log.error("Unable to find safe RWX region in baseband memory to store code")
-            return False
-        else:
-            log.info("Found RWX region [%08x - %08x]", rwx_region.begin, rwx_region.end)
-            self.playground = rwx_region
+        # if rwx_region is None:
+        #     log.error("Unable to find safe RWX region in baseband memory to store code")
+        #     return False
+        # else:
+        #     log.info("Found RWX region [%08x - %08x]", rwx_region.begin, rwx_region.end)
+        #     self.playground = rwx_region
 
         ##############################################################
         # Initialize the targets
@@ -438,9 +438,9 @@ r12: %08x     cpsr: %08x""" % (
         soc_per.warm_boot[1] = 0x1
 
         # Boot packet
-        shannon_cp = self.get_peripheral("SHM")
-        shannon_cp.send_raw_packet(b"\x00" * 4 + b"\x0d\x90\x00\x00")
-        shannon_cp.send_raw_packet(b"\x00" * 4 + b"\x00\x9f\x00\x00")
+        # shannon_cp = self.get_peripheral("SHM")
+        # shannon_cp.send_raw_packet(b"\x00" * 4 + b"\x0d\x90\x00\x00")
+        # shannon_cp.send_raw_packet(b"\x00" * 4 + b"\x00\x9f\x00\x00")
 
         # optional: disable log_printf for more speedup during fuzzing
         # logging will still be shown through PANDA hooks, but the target won't buffer it
