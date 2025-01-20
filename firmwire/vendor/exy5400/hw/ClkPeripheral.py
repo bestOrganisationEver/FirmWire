@@ -5,113 +5,224 @@ from avatar2 import *
 from . import PassthroughPeripheral, LoggingPeripheral
 
 
-class S5000APClkPeripheral(LoggingPeripheral):
-    def hw_read(self, offset, size):
-        if offset == 0x120:
-            value = self.boot_clk[0]
-            offset_name = "BOOT_CLK_0"
-            self.log_read(value, size, offset_name)
-        elif offset == 0x140:
-            value = self.boot_clk[1]
-            offset_name = "BOOT_CLK_2"
-            self.log_read(value, size, offset_name)
-        else:
-            value = super().hw_read(offset, size)
+# class S5000APClkPeripheral(LoggingPeripheral):
+#     def hw_read(self, offset, size):
+#         if offset == 0x120:
+#             value = self.boot_clk[0]
+#             offset_name = "BOOT_CLK_0"
+#             self.log_read(value, size, offset_name)
+#         elif offset == 0x140:
+#             value = self.boot_clk[1]
+#             offset_name = "BOOT_CLK_2"
+#             self.log_read(value, size, offset_name)
+#         else:
+#             value = super().hw_read(offset, size)
 
-        return value
+#         return value
 
-    def hw_write(self, offset, size, value):
-        if offset == 0x400:
-            if value & 1 == 1:
-                value |= 0x1F000000 | 0x20000000
-        elif offset == 0x1084:
-            if value & 1 == 1:
-                value = (value & ~0x1) | 0x4
-        # 817d0310 <= LOG_clk_per[83000100]
-        elif offset == 0x100:
-            if value & 0x80000000:
-                self.clk_0x100 = value | 0x20000000
-                value = self.clk_0x100
-            if value & 0x10:
-                self.clk_0x100 = value | 0x80
-                value = self.clk_0x100
+#     def hw_write(self, offset, size, value):
+#         if offset == 0x400:
+#             if value & 1 == 1:
+#                 value |= 0x1F000000 | 0x20000000
+#         elif offset == 0x1084:
+#             if value & 1 == 1:
+#                 value = (value & ~0x1) | 0x4
+#         # 817d0310 <= LOG_clk_per[83000100]
+#         elif offset == 0x100:
+#             if value & 0x80000000:
+#                 self.clk_0x100 = value | 0x20000000
+#                 value = self.clk_0x100
+#             if value & 0x10:
+#                 self.clk_0x100 = value | 0x80
+#                 value = self.clk_0x100
 
-        return super().hw_write(offset, size, value)
+#         return super().hw_write(offset, size, value)
+
+#     def __init__(self, name, address, size, **kwargs):
+#         super().__init__(name, address, size, **kwargs)
+#         # 0x83000120, 0x83000140
+#         self.boot_clk = [0x20000000, 0x20000000]
+#         self.clk_0x100 = 0
+
+#         self.read_handler[0:size] = self.hw_read
+#         self.write_handler[0:size] = self.hw_write
+
+
+# class S360APClkPeripheral(LoggingPeripheral):
+#     def hw_read(self, offset, size):
+#         if offset == 0x100:
+#             value = self.clk_0x100
+#             offset_name = "UNK_CLK"
+#             value = self.cyclic_bit()
+#             self.log_read(value, size, offset_name)
+#         elif offset == 0x120:
+#             value = self.boot_clk[0]
+#             offset_name = "BOOT_CLK_0"
+#             self.log_read(value, size, offset_name)
+#         elif offset == 0x140:
+#             value = self.boot_clk[1]
+#             offset_name = "BOOT_CLK_2"
+#             self.log_read(value, size, offset_name)
+#         elif offset == 0x2004:
+#             value = 0x30000
+#         elif offset == 0x201C:
+#             value = 0x2
+#         elif offset == 0x202C:
+#             value = 0x1
+#         elif offset == 0x2070:
+#             value = 0x40000000
+#         elif offset == 0x2078:
+#             value = 0x40000000 | 0x80000000
+#         elif offset == 0x4308:
+#             value = self.store_4300
+#         else:
+#             value = super().hw_read(offset, size)
+
+#         return value
+
+#     def hw_write(self, offset, size, value):
+#         if offset == 0x400:
+#             if value & 1 == 1:
+#                 value |= 0x1F000000 | 0x20000000
+#             return super().hw_write(offset, size, value)
+#         elif offset == 0x1084:
+#             if value & 1 == 1:
+#                 value = (value & ~0x1) | 0x4
+#         # 817d0310 <= LOG_clk_per[83000100]
+#         elif offset == 0x100:
+#             if value & 0x80000000:
+#                 self.clk_0x100 = 0x20000000
+#             if value & 0x10:
+#                 self.clk_0x100 = 0x80
+#             # print("AAAAAAAAAAAA CLK %08x" % (self.clk_0x100))
+#         elif offset == 0x4300:
+#             self.store_4300 = value
+#         else:
+#             return super().hw_write(offset, size, value)
+
+#         return True
+
+#     def __init__(self, name, address, size, **kwargs):
+#         super().__init__(name, address, size, **kwargs)
+#         # 0x83000120, 0x83000140
+#         self.boot_clk = [0x20000000, 0x20000000]
+#         self.clk_0x100 = 0
+#         self.store_4300 = 0
+
+#         self.read_handler[0:size] = self.hw_read
+#         self.write_handler[0:size] = self.hw_write
+
+class S5123APClkPeripheral(LoggingPeripheral):
+    def hw_read(self, offset, size, *args, **kwargs):
+        # PLL_CON0_MPLL_CP (from 0x415e4ffe) / M0 (from 0x415e4b72)
+        if offset == 0x180:
+            # if (val << 0xf s< 0), there's an infinite 
+            # loop at the above address.
+            # bit 0x30 set == enabled
+            return 0
+            pass
+        # M1 (from 0x415e4b72)
+        if offset == 0x184:
+            pass
+        # M2 (from 0x415e4b72)
+        if offset == 0x188:
+            pass
+        # M3 (from 0x415e4b72)
+        if offset == 0x18C:
+            # there's an infinite loop at the above address if:
+            # M3 << 2 s>= 0 || (D & 0x3f0000) == 0 || (D & 0x3f0000) == 0x3f0000
+            return 1 << 29
+            pass
+        # M4 (from 0x415e4ba0)
+        if offset == 0x190:
+            pass
+        # M5 (from 0x415e4ba0)
+        if offset == 0x194:
+            pass
+        # M6 (from 0x415e4ba0)
+        if offset == 0x198:
+            pass
+        # M7 (from 0x415e4ba0)
+        if offset == 0x19C:
+            pass
+        # M8 (from 0x415e4ba0)
+        if offset == 0x1A0:
+            pass
+        # D (from 0x415e4ba0)
+        if offset == 0x4180:
+            # see note at M3 for more info
+            return 0x2f0000
+            pass
+        # PLL_CON6_MPLL_CP (from 0x415e49b4)
+        if offset == 0x198:
+            # if val << 2 s>= 0), there's an infinite 
+            # loop at the above address.
+            return 1 << 29
+            pass
+        # MCW MR_REGISTER_A00 (from 0x415e4c98)
+        elif offset == 0xa00:
+            # if val & 0x10101020 != 0, there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # MCW MR_REGISTER_A04 (from 0x415e4d14)
+        elif offset == 0xa04:
+            # if val & 0x8222004 != 0, there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # MCW MR_REGISTER_A08 (from 0x415e4d88)
+        elif offset == 0xa08:
+            # if (val << 0x1b s< 0), there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # MCW MR_REGISTER_A0C (from 0x415e4dfe)
+        elif offset == 0xa0c:
+            # if val & 0x10101010 != 0, there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # TSM_MCW_SYNC_REQ (from 0x415e508a)
+        elif offset == 0xb18:
+            # if val << 0x1f != 0, there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # MCW MR_REGISTER_C00 (from 0x415e4e8e)
+        elif offset == 0xc00:
+            # if ((val & 0x42244) != 0), there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+        # MCW MR_REGISTER_C04 (from 0x415e4f08)
+        elif offset == 0xc04:
+            # if ((val & 0x44440040) != 0), there's an infinite 
+            # loop at the above address.
+            return 0
+            pass
+
+
+        return super().hw_read(offset, size, *args, **kwargs)
+
+    def hw_write(self, offset, size, value, *args, **kwargs):
+        return super().hw_write(offset, size, value, *args, **kwargs)
+
+        
+     
 
     def __init__(self, name, address, size, **kwargs):
         super().__init__(name, address, size, **kwargs)
         # 0x83000120, 0x83000140
-        self.boot_clk = [0x20000000, 0x20000000]
-        self.clk_0x100 = 0
+        # self.boot_clk = [0x20000000, 0x20000000]
+        # self.clk_0x100 = 0
+        # self.store_4300 = 0
+        # self.next_val = 0
+        # self.val_201c = 0x1 | 0x2
+        # self.val_202c = 0x1 | 0x2
 
         self.read_handler[0:size] = self.hw_read
         self.write_handler[0:size] = self.hw_write
-
-
-class S360APClkPeripheral(LoggingPeripheral):
-    def hw_read(self, offset, size):
-        if offset == 0x100:
-            value = self.clk_0x100
-            offset_name = "UNK_CLK"
-            value = self.cyclic_bit()
-            self.log_read(value, size, offset_name)
-        elif offset == 0x120:
-            value = self.boot_clk[0]
-            offset_name = "BOOT_CLK_0"
-            self.log_read(value, size, offset_name)
-        elif offset == 0x140:
-            value = self.boot_clk[1]
-            offset_name = "BOOT_CLK_2"
-            self.log_read(value, size, offset_name)
-        elif offset == 0x2004:
-            value = 0x30000
-        elif offset == 0x201C:
-            value = 0x2
-        elif offset == 0x202C:
-            value = 0x1
-        elif offset == 0x2070:
-            value = 0x40000000
-        elif offset == 0x2078:
-            value = 0x40000000 | 0x80000000
-        elif offset == 0x4308:
-            value = self.store_4300
-        else:
-            value = super().hw_read(offset, size)
-
-        return value
-
-    def hw_write(self, offset, size, value):
-        if offset == 0x400:
-            if value & 1 == 1:
-                value |= 0x1F000000 | 0x20000000
-            return super().hw_write(offset, size, value)
-        elif offset == 0x1084:
-            if value & 1 == 1:
-                value = (value & ~0x1) | 0x4
-        # 817d0310 <= LOG_clk_per[83000100]
-        elif offset == 0x100:
-            if value & 0x80000000:
-                self.clk_0x100 = 0x20000000
-            if value & 0x10:
-                self.clk_0x100 = 0x80
-            # print("AAAAAAAAAAAA CLK %08x" % (self.clk_0x100))
-        elif offset == 0x4300:
-            self.store_4300 = value
-        else:
-            return super().hw_write(offset, size, value)
-
-        return True
-
-    def __init__(self, name, address, size, **kwargs):
-        super().__init__(name, address, size, **kwargs)
-        # 0x83000120, 0x83000140
-        self.boot_clk = [0x20000000, 0x20000000]
-        self.clk_0x100 = 0
-        self.store_4300 = 0
-
-        self.read_handler[0:size] = self.hw_read
-        self.write_handler[0:size] = self.hw_write
-
 
 class S355APClkPeripheral(LoggingPeripheral):
     def hw_read(self, offset, size):
