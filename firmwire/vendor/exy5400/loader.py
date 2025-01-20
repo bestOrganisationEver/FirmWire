@@ -228,7 +228,7 @@ class Exy5400Loader(firmwire.loader.Loader):
         self.create_peripheral(
             self.modem_soc.CLK_PERIPHERAL,
             self.modem_soc.SOC_CLK_BASE,
-            0xA000,
+            0x200000,
             name="SOC_CLK",
         )
 
