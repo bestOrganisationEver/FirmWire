@@ -114,6 +114,21 @@ from . import PassthroughPeripheral, LoggingPeripheral
 
 class S5123APClkPeripheral(LoggingPeripheral):
     def hw_read(self, offset, size, *args, **kwargs):
+        # 0x88500100 - 0x88500180
+        # two clocks, inline
+        # assert offset >= 0x100
+        if 0x100 <= offset < 0x140:
+            value = 0x0
+            self.log_read(value, size, "clk4 @ %08x" % self.address + offset)
+            return value
+        if 0x140 <= offset < 0x180:
+            value = 0x0
+            self.log_read(value, size, "clk5 @ %08x" % self.address + offset)
+            return value
+            
+            
+        # 0x88500180-
+
         # PLL_CON0_MPLL_CP (from 0x415e4ffe) / M0 (from 0x415e4b72)
         if offset == 0x180:
             # if (val << 0xf s< 0), there's an infinite 

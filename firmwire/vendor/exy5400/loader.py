@@ -12,6 +12,8 @@ import os
 
 from pathlib import PurePath
 
+from firmwire.vendor.exy5400.hw.CMU_MCW import S5123ApCmuMcwPeripheral
+from firmwire.vendor.exy5400.hw.CMU_UCPU import S5123ApCmuUcpuPeripheral
 from firmwire.vendor.shannon.mpu import AddressRange
 
 from .TOCFile import *
@@ -216,29 +218,84 @@ class Exy5400Loader(firmwire.loader.Loader):
         for peripheral in self.modem_soc.peripherals:
             self.create_soc_peripheral(peripheral)
 
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x000, 0x100, "tim0", 34, 100000)
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x100, 0x100, "tim1", 35, 6000000)
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x200, 0x100, "tim2", 36, 6000000)
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x300, 0x100, "tim3", 37, 6000000)
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x400, 0x100, "tim4", 38, 6000000)
-        self.create_timer(self.modem_soc.TIMER_BASE + 0x500, 0x100, "tim5", 39, 6000000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x000, 0x100, "tim0", 34, 100000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x100, 0x100, "tim1", 35, 6000000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x200, 0x100, "tim2", 36, 6000000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x300, 0x100, "tim3", 37, 6000000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x400, 0x100, "tim4", 38, 6000000)
+        # self.create_timer(self.modem_soc.TIMER_BASE + 0x500, 0x100, "tim5", 39, 6000000)
+        # self.create_peripheral(LoggingPeripheral, 0x84100100, 0x40, name="clk0")
+        # self.create_peripheral(LoggingPeripheral, 0x84100100 + 0x40, 0x40, name="clk1")
+        # self.create_peripheral(LoggingPeripheral, 0x84100100 + 0x80, 0x40, name="clk2")
+        # self.create_peripheral(LoggingPeripheral, 0x84100100 + 0xc0, 0x40, name="clk3")
+        # clk4 and clk5 are handled by the timer peripheral
+        # self.create_peripheral(LoggingPeripheral, 0x88500100, 0x40, name="clk4")
+        # self.create_peripheral(LoggingPeripheral, 0x88500100 + 0x40, 0x40, name="clk5")
+        # self.create_peripheral(LoggingPeripheral, 0x8F900000, 0x1000, name="clk1")
+        # self.create_peripheral(LoggingPeripheral, 0x8F900000, 0x1000, name="clk1")
+        # self.create_peripheral(LoggingPeripheral, 0x8F900000, 0x1000, name="clk1")
 
         self.create_peripheral(ShannonTCU, 0x8200F000, 0x100, name="TCU")
 
-        self.create_peripheral(
-            self.modem_soc.CLK_PERIPHERAL,
-            self.modem_soc.SOC_CLK_BASE,
-            0x200000,
-            name="SOC_CLK",
-        )
+        # self.create_peripheral(
+        #     self.modem_soc.CLK_PERIPHERAL,
+        #     self.modem_soc.SOC_CLK_BASE,
+        #     0x200000,
+        #     name="SOC_CLK",
+        # )
 
         # This has the CHIP_ID
         self.create_peripheral(
             ShannonSOCPeripheral, self.modem_soc.SOC_BASE, 0x2000, name="SOC"
         )
 
-        self.create_peripheral(UARTPeripheral, 0x84000000, 0x1000, name="boot_uart")
-        self.create_peripheral(Unknown2Peripheral, 0x81002000, 0x1000, name="unk_per8")
+        self.create_peripheral(UARTPeripheral, 0x84000000, 0x1000, name="UART1")
+        self.create_peripheral(UARTPeripheral, 0x84010000, 0x1000, name="UART2")
+
+
+        # from saveable periph table @ 0x430c7b98
+        self.create_peripheral(LoggingPeripheral, 0x81000000, 0x10000, name='UCPUGICD')
+        self.create_peripheral(LoggingPeripheral, 0x81040000, 0x1f008, name='CPUGICR0')
+        self.create_peripheral(LoggingPeripheral, 0x81060000, 0x1f008, name='CPUGICR1')
+        self.create_peripheral(LoggingPeripheral, 0x81080000, 0x1f008, name='CPUGICR2')
+        self.create_peripheral(LoggingPeripheral, 0x810a0000, 0x1f008, name='CPUGICR3')
+        self.create_peripheral(LoggingPeripheral, 0x810c0000, 0x1f008, name='CPUGICR4')
+        self.create_peripheral(LoggingPeripheral, 0x810e0000, 0x1f008, name='CPUGICR5')
+        self.create_peripheral(LoggingPeripheral, 0x81100000, 0x1f008, name='CPUGICR6')
+        self.create_peripheral(LoggingPeripheral, 0x81120000, 0x1f008, name='CPUGICR7')
+        self.create_peripheral(LoggingPeripheral, 0x81140000, 0x1f008, name='CPUGICR8')
+        self.create_peripheral(LoggingPeripheral, 0x81160000, 0x1f008, name='CPUGICR9')
+        self.create_peripheral(LoggingPeripheral, 0x81020000, 0x10000, name='CPUGICT0')
+        self.create_peripheral(S5123ApCmuUcpuPeripheral, 0x84100000, 0x71f8, name='CMU_UCPU')
+        self.create_peripheral(LoggingPeripheral, 0x82030000, 0x424, name='ALV_CMU')
+        # self.create_peripheral(LoggingPeripheral, 0x82020000, 0xd04, name='PMU')
+        self.create_peripheral(LoggingPeripheral, 0x82100000, 0x200c, name='ALV_GPIO')
+        self.create_peripheral(LoggingPeripheral, 0x82070000, 0x100, name='TIMER')
+        self.create_peripheral(LoggingPeripheral, 0x840f0000, 0xb00, name='MC_TIMER')
+        # self.create_peripheral(LoggingPeripheral, 0x84000000, 0x50, name='UART1')
+        self.create_peripheral(LoggingPeripheral, 0x84130000, 0x44, name='DMA0')
+        self.create_peripheral(LoggingPeripheral, 0x84140000, 0x44, name='DMA1')
+        self.create_peripheral(LoggingPeripheral, 0x84150000, 0x44, name='DMA2')
+        self.create_peripheral(LoggingPeripheral, 0x82000000, 0x728, name='SYSCFG')
+        self.create_peripheral(LoggingPeripheral, 0x84120000, 0x558, name='BUS_MON')
+        self.create_peripheral(LoggingPeripheral, 0x9f9b0000, 0x100, name='MAILBOX')
+        self.create_peripheral(LoggingPeripheral, 0x9f9d0000, 0x110, name='MAILBOXC')
+        self.create_peripheral(LoggingPeripheral, 0x9ead0000, 0x120, name='MBX_ASM')
+        self.create_peripheral(LoggingPeripheral, 0x9f970000, 0x128, name='ACPM')
+        self.create_peripheral(LoggingPeripheral, 0x9f980000, 0x120, name='FASTACPM')
+        # self.create_peripheral(LoggingPeripheral, 0x84010000, 0x50, name='UART2')
+        self.create_peripheral(LoggingPeripheral, 0x9ee30000, 0xa58, name='CMGPGPIO')
+        self.create_peripheral(LoggingPeripheral, 0x84180000, 0xd00c, name='PKTPROCO')
+        self.create_peripheral(LoggingPeripheral, 0x84030000, 0x94, name='USIM0')
+        self.create_peripheral(LoggingPeripheral, 0x84040000, 0x94, name='USIM1')
+        self.create_peripheral(LoggingPeripheral, 0x84080000, 0xae0, name='EXT_LIG0')
+        self.create_peripheral(LoggingPeripheral, 0x84090000, 0xae0, name='EXT_LIG1')
+        self.create_peripheral(LoggingPeripheral, 0x841e0000, 0x44, name='SWI_IF')
+        self.create_peripheral(LoggingPeripheral, 0x841f0000, 0xa10, name='CPCPUCFG')
+        self.create_peripheral(LoggingPeripheral, 0x88520000, 0x200c, name='MCW_GPIO')
+
+        self.create_peripheral(S5123ApCmuMcwPeripheral, 0x88500000, 0x7060, name='CMU_MCW')
+        # --- saveable periphs end ---
 
         # @ 40000958: 0x4b200c00
         # This contains CHIP MODE and communication FIFO

@@ -106,3 +106,10 @@ def download_url(url):
 
         log.info("Downloaded %d byte file %s", length_downloaded, filename)
         return filename
+
+
+def extract_bits(val: int, bstart: int, size: int) -> int:
+    mask = (1 << size) - 1
+    val = val >> bstart
+
+    return val & mask

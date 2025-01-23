@@ -135,15 +135,17 @@ class PassthroughPeripheral(FirmWirePeripheral):
 
 
 class LoggingPeripheral(PassthroughPeripheral):
-    def hw_read(self, offset, size, *args, **kwargs):
+    def hw_read(self, offset, size, offset_name = None, *args, **kwargs):
         value = super().hw_read(offset, size)
-        offset_name = "LOG %08x" % (self.address + offset)
+        if offset_name is None:
+            offset_name = "LOG %08x" % (self.address + offset)
         self.log_read(value, size, offset_name)
 
         return value
 
-    def hw_write(self, offset, size, value, *args, **kwargs):
-        offset_name = "LOG %08x" % (self.address + offset)
+    def hw_write(self, offset, size, value, offset_name = None, *args, **kwargs):
+        if offset_name is None:
+            offset_name = "LOG %08x" % (self.address + offset)
         self.log_write(value, size, offset_name)
 
         super().hw_write(offset, size, value)
