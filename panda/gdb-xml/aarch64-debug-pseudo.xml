@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- 
+    Contains gdb definitions for aarch64 pseudo-registers
+
+    Copyright (C) 2024 Baseband Security Lab.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.aarch64.debug-pseudo">
+  <!-- it's actually a bool -->
+  <reg name="is_aarch64" bitsize="8"/>
+</feature>
