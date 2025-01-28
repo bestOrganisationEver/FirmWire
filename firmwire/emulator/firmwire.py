@@ -248,6 +248,7 @@ class FirmWireEmu(ABC):
 
             return inner
 
+        # Partial writes: before_tcg_codegen
         self.qemu.add_hook(address, hook_wrapper(hook))
 
     def pre_breakpoint_handler(self, bp_obj):

@@ -352,6 +352,7 @@ class Exy5400Loader(firmwire.loader.Loader):
         # Faulting PC: 0x4004546: str.w   r1, [r0, #0x104]
         self.add_memory_annotation(0x80000000, 0x2000, "unk_per7")
 
+
         return True
 
     def create_timer(self, start, size, name, irq_num, freq=1000000):

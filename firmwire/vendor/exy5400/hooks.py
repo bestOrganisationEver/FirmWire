@@ -6,6 +6,7 @@ import struct
 import logging
 import binascii
 import collections
+import time
 
 from avatar2 import *
 # from .queue import QUEUE_STRUCT_SIZE, QUEUE_NAME_PTR_OFFSET
@@ -13,6 +14,7 @@ from avatar2 import *
 from firmwire.util.panda import read_cstring_panda
 
 log = logging.getLogger(__name__)
+scatterload_start_time = None
 
 ##########################################################
 ## HOOKS BEGIN
@@ -587,6 +589,153 @@ def handle_IRQ(self, cpustate, tb, hook):
 def handle_FIQ(self, cpustate, tb, hook):
     return False
 
+def __scatterload_zeroinit_32(self, cpustate, tb, hook):
+    global scatterload_start_time
+    now = time.time()
+    if scatterload_start_time is not None:
+        print(f"Scatterload decompress took {now - scatterload_start_time} seconds.")
+        scatterload_start_time = None
+
+    return False
+
+
+
+# decompress from src to dst, input buffer cnt - costed me an arm and a leg to
+# get it working but it now uncompresses 100% of the buffer and does it correctly
+def scatterload_decompress(src, cnt):
+    src_index = 0
+    dst_index = 0
+
+    output_buffer = bytearray(cnt)
+
+    while (src_index < cnt):
+
+        # read the current byte from the source and increment the source index
+        cur_byte = ida_bytes.get_byte(src + src_index)
+        src_index += 1
+
+        # extract the lower 2 bits of the current byte
+        cpy_bytes = cur_byte & 3
+
+        # if cpy_bytes is 0, read the next byte from the source
+        if (cpy_bytes == 0):
+            cpy_bytes = ida_bytes.get_byte(src + src_index)
+            src_index += 1
+
+        # extract the upper 4 bits of the current byte to get 'high_4_b'
+        high_4_b = cur_byte >> 4
+
+        # if 'high_4_b' is 0, read the next byte from the source
+        if (high_4_b == 0):
+            high_4_b = ida_bytes.get_byte(src + src_index)
+            src_index += 1
+
+        # copy x bytes from the source to the destination
+        for _ in range(cpy_bytes):
+
+            if (dst_index >= cnt):
+                #shannon_generic.DEBUG("[d] out of bound write to %x/%x\n" % (cnt, dst_index))
+                return bytes(list(output_buffer))
+
+            if (dst_index >= len(output_buffer)):
+                output_buffer = output_buffer.ljust(dst_index + 1, b"\x00")
+
+            # copy byte from source to destination
+            byte = ida_bytes.get_byte(src + src_index)
+            output_buffer[dst_index] = byte
+
+            dst_index += 1
+            src_index += 1
+
+        # if 'high_4_b' is non-zero, perform additional operations
+        if (high_4_b):
+
+            # read the offset byte from the source and increment the source index
+            offset = ida_bytes.get_byte(src + src_index)
+            src_index += 1
+
+            # extract bits 2 and 3 from the current byte
+            bit_2_3 = cur_byte & 0xC
+
+            # calculate the source pointer for backward copy
+            src_ptr = dst_index - offset
+
+            # if both are set 0x12 == b1100
+            if (bit_2_3 == 0xC):
+
+                # if bits set, get one more byte
+                bit_2_3 = ida_bytes.get_byte(src + src_index)
+                src_index += 1
+                src_ptr -= 256 * bit_2_3
+
+            else:
+                # otherwise, adjust the source pointer based on extracted bits
+                src_ptr -= 64 * bit_2_3
+
+            # copy 'high_4_b + 1' bytes from the previously decompressed data
+            for _ in range(high_4_b + 1):
+
+                # buffer max bailout
+                if (dst_index >= cnt):
+                    #shannon_generic.DEBUG("[d] out of bound write to %x/%x/%x\n" % (cnt, dst_index, src_index))
+                    return bytes(list(output_buffer))
+
+                if (dst_index >= len(output_buffer)):
+                    output_buffer = output_buffer.ljust(dst_index + 1, b"\x00")
+
+                # some possible error conditions
+                if (src_ptr > cnt):
+                    #shannon_generic.DEBUG("[d] out of bound read to %x/%x/%x\n" % (cnt, src_ptr, src_index))
+                    return bytes(list(output_buffer))
+
+                if (src_ptr < 0):
+                    #shannon_generic.DEBUG("[d] negativ read %x/%x\n" % (src_ptr, src_index))
+                    return bytes(list(output_buffer))
+
+                # copy byte from previously decompressed data to the current destination
+                output_buffer[dst_index] = output_buffer[src_ptr]
+
+                dst_index += 1
+                src_ptr += 1
+
+    # return the final source index after decompression
+    return bytes(list(output_buffer))
+
+
+def scatterload_decompress(self, cpustate, tb, hook):
+    # r0: src, r1: dst, r2: size
+    print("Scatterload decompress hook called from, ", hex(cpustate.env_ptr.regs[14]))
+    for i in range(16):
+        print(f"R{i}: {hex(cpustate.env_ptr.regs[i])}")
+
+    src = cpustate.env_ptr.regs[0]
+    dst = cpustate.env_ptr.regs[1]
+    size = cpustate.env_ptr.regs[2]
+    print(hex(src),hex(dst),hex(size))
+    result = self.qemu.pypanda.libpanda.panda_scatterload_decompress_external(cpustate, src, dst, size)
+    # print("decomp result", result)
+
+    return False
+
+def scatterload(self, cpustate, tb, hook):
+    global scatterload_start_time
+    scatterload_start_time = time.time()
+
+    print(f"Scatterload hook called @ {scatterload_start_time}")
+    # print("lr", hex(cpustate.env_ptr.regs[14]))
+    # lr = cpustate.env_ptr.regs[14]
+    # cpustate.env_ptr.regs[15] = lr
+
+    # print("lr: ", hex(lr))
+    # # Modify the assembly instruction here
+    # # Example: Change the instruction at the link register address to a NOP (No Operation)
+    # print(self.qemu)
+    # # cpustate['pc'] = cpustate['lr']  # Update PC to LR
+    # current_lr = self.qemu.read_register("lr")
+    # self.qemu.write_register("pc", current_lr)
+
+    return False
+
 
 ##########################################################
 ## HOOKS END
@@ -595,6 +744,27 @@ def handle_FIQ(self, cpustate, tb, hook):
 # NOTE: there a lot of hooks that need patterns. They are hardcoded for the CP_G973FXXU3ASG8_CP13372649_CL16487963_QB24948473_REV01_user_low_ship.tar image
 # They are all just informative - emulation will still work for other firmware
 mappings = [
+    # {
+    #     "name": "scatterload_zeroinit_32",
+    #     "address": 0x42be9470,
+    #     "handler": __scatterload_zeroinit_32,
+    # },
+    # {
+    #     "name": "scatterload",
+    #     "address": 0x42be9398,
+    #     "handler": scatterload
+    # },
+        {
+        "name": "scatterload_decompress",
+        "address": 0x42be93d4,
+        "handler":  scatterload_decompress
+    },
+    # {
+    #     "name": "scatterload_decompress",
+    #     "address": 0x42be93d4,
+    #     "handler": scatterload_decompress
+    # }
+
     # {
     #     "name": "OS_handle_interrupt",
     #     # TODO: pattern
