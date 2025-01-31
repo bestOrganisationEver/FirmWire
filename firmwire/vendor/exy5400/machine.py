@@ -474,6 +474,12 @@ r12: %08x     cpsr: %08x""" % (
         # log.error(qemu.read_register("is_aarch64"))
         # qemu.write_register("is_aarch64", 1)
 
+        # Scatterload is slow... Disable here and implement in QEMU/panda
+        sctr = b"\xe1\x2f\xff\x1e"# bx lr
+        self.qemu.write_memory(0x42be93d4, len(sctr), sctr, raw=True)
+        self.set_breakpoint(0x42be93d4, self.scatter_load_handler, continue_after=True)
+        self.set_breakpoint(0x42be93ac+8, self.test_hdlr, continue_after=True)
+
         return True
 
     def load_task_module(self, name):
@@ -846,3 +852,26 @@ r12: %08x     cpsr: %08x""" % (
         #         return False
 
         return True
+
+
+
+    def scatter_load_handler(self):
+        print("Scatterloading")
+        src = self.qemu.read_register("r0")
+        dst = self.qemu.read_register("r1")
+        size = self.qemu.read_register("r2")
+        print(hex(dst),hex(src),hex(size))
+        cpustate = self.qemu.pypanda.libpanda.get_cpu()
+        self.qemu.pypanda.libpanda.panda_scatterload_decompress_external(cpustate, src, dst, size)
+        
+        data = self.qemu.read_memory(dst, size=10, raw=True)
+        # import time
+        # time.sleep(1)
+        print("GOT DATA: ", data.hex())
+        # time.sleep(5)
+
+    def test_hdlr(self):
+        data = self.qemu.read_memory(0x53800000, size=1, num_words=10, raw=True)
+        print("GOT DATA2: ", data.hex())
+        import time
+        time.sleep(5)

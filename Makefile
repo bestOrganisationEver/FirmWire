@@ -53,11 +53,11 @@ panda/build/Makefile:
 
 .PHONY: update-dep
 update-dep: panda
-	cd panda && git checkout main && git pull
+	cd panda && git checkout decompress && git pull
 
 panda:
 	git clone --recurse-submodules https://github.com/bestOrganisationEver/panda.git
-	cd panda && git checkout main
+	cd panda && git checkout decompress
 	
 
 configure: $(VENV)/touchfile panda
