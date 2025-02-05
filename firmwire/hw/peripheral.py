@@ -43,6 +43,13 @@ class FirmWirePeripheral(avatar2.AvatarPeripheral):
         del state["machine"]
 
         return state
+    
+    def set_machine(self, machine):
+        """Sets the machine for this peripheral after initialization (e.g. for
+        loading a pickle). If the peripheral contains other peripherals, this
+        function must be overridden to recursively be called on the child
+        peripherals."""
+        self.machine = machine
 
     def log_read(self, value, size, offset_name):
         self.log.info(

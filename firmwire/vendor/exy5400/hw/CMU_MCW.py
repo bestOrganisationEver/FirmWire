@@ -103,6 +103,14 @@ class S5123ApCmuMcwPeripheral(LoggingPeripheral):
 
         return super().hw_write(offset, size, value, *args, **kwargs)
 
+    def set_machine(self, machine):
+        super().set_machine(machine)
+        self.ipll0.set_machine(machine)
+        self.ipll1.set_machine(machine)
+        
+        self.mpll.set_machine(machine)
+        self.mpll_nrt.set_machine(machine)
+
     def __init__(self, name, address, size, **kwargs):
         super().__init__(name, address, size, **kwargs)
         self.ipll0 = S5123ApPllPeripheral("IPLL0", address + 0x100, 0x40, **kwargs)

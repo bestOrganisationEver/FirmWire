@@ -465,7 +465,7 @@ class FirmWireEmu(ABC):
             per = peripherals[mem.begin]
 
             # FirmWirePeripheral.machine not a pickled field. must be restored manually
-            per.machine = self
+            per.set_machine(self)
 
             log.info("Restoring " + str(per))
 
